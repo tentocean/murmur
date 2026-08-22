@@ -510,20 +510,21 @@ class Component extends DCLogic {
     else if(monthOffset==null && (m = text.match(/\bin\s+(\d+)\s+months?\b/i))){ monthOffset=+m[1]; text=text.replace(m[0]," "); }
     else if(monthOffset==null && /เดือนหน้า/.test(text)){ monthOffset=1; text=text.replace(/เดือนหน้า/," "); }
 
-    // ── ไทย: วันที่เจาะจง (วันที่ 5 / วันที่ 5 กันยายน) ──
+    // ── ไทย: วันที่เจาะจง (วันที่ 5 / 5 กันยา / กันยายน 5 — ชื่อเดือนพูดสั้นได้) ──
     if(dayOffset==null && absTarget==null){
-      const MON="มกราคม|ม\\.?ค\\.?|กุมภาพันธ์|ก\\.?พ\\.?|มีนาคม|มี\\.?ค\\.?|เมษายน|เม\\.?ย\\.?|พฤษภาคม|พ\\.?ค\\.?|มิถุนายน|มิ\\.?ย\\.?|กรกฎาคม|ก\\.?ค\\.?|สิงหาคม|ส\\.?ค\\.?|กันยายน|ก\\.?ย\\.?|ตุลาคม|ต\\.?ค\\.?|พฤศจิกายน|พ\\.?ย\\.?|ธันวาคม|ธ\\.?ค\\.?";
-      if(m = text.match(new RegExp("วันที่\\s*(\\d{1,2})\\s*("+MON+")?"))){
-        const dom=+m[1];
-        if(dom>=1 && dom<=31){
-          const d=new Date(now); d.setHours(9,0,0,0); d.setDate(dom);
-          if(m[2]){
-            const mmap=[[/^(มกราคม|ม\.?ค)/,0],[/^(กุมภาพันธ์|ก\.?พ)/,1],[/^(มีนาคม|มี\.?ค)/,2],[/^(เมษายน|เม\.?ย)/,3],[/^(พฤษภาคม|พ\.?ค)/,4],[/^(มิถุนายน|มิ\.?ย)/,5],[/^(กรกฎาคม|ก\.?ค)/,6],[/^(สิงหาคม|ส\.?ค)/,7],[/^(กันยายน|ก\.?ย)/,8],[/^(ตุลาคม|ต\.?ค)/,9],[/^(พฤศจิกายน|พ\.?ย)/,10],[/^(ธันวาคม|ธ\.?ค)/,11]];
-            const hit=mmap.find(x=>x[0].test(m[2]));
-            if(hit){ d.setMonth(hit[1]); if(d.getTime()<now.getTime()) d.setFullYear(d.getFullYear()+1); }
-          } else if(d.getTime()<now.getTime()){ d.setMonth(d.getMonth()+1); }
-          absTarget=d; text=text.replace(m[0]," ");
-        }
+      // แต่ละเดือนรับทั้งชื่อเต็ม, ชื่อสั้นที่พูดกัน (กันยา, สิงหา…) และตัวย่อมีจุด (ก.ย.)
+      const MON="มกรา[ก-๛]*|ม\\.?ค\\.?|กุมภา[ก-๛]*|กุมพา|ก\\.?พ\\.?|มีนา[ก-๛]*|มี\\.?ค\\.?|เมษา[ก-๛]*|เม\\.?ย\\.?|พฤษภา[ก-๛]*|พ\\.?ค\\.?|มิถุนา[ก-๛]*|มิ\\.?ย\\.?|กรกฎา[ก-๛]*|ก\\.?ค\\.?|สิงหา[ก-๛]*|ส\\.?ค\\.?|กันยา[ก-๛]*|ก\\.?ย\\.?|ตุลา[ก-๛]*|ต\\.?ค\\.?|พฤศจิกา[ก-๛]*|พ\\.?ย\\.?|ธันวา[ก-๛]*|ธ\\.?ค\\.?";
+      const mmap=[[/^(มกรา|ม\.?ค)/,0],[/^(กุมภา|กุมพา|ก\.?พ)/,1],[/^(มีนา|มี\.?ค)/,2],[/^(เมษา|เม\.?ย)/,3],[/^(พฤษภา|พ\.?ค)/,4],[/^(มิถุนา|มิ\.?ย)/,5],[/^(กรกฎา|ก\.?ค)/,6],[/^(สิงหา|ส\.?ค)/,7],[/^(กันยา|ก\.?ย)/,8],[/^(ตุลา|ต\.?ค)/,9],[/^(พฤศจิกา|พ\.?ย)/,10],[/^(ธันวา|ธ\.?ค)/,11]];
+      const monIdx=t=>{ const h=mmap.find(x=>x[0].test(t)); return h?h[1]:null; };
+      let dom=null, mon=null, full=null;
+      if(m = text.match(new RegExp("วันที่\\s*(\\d{1,2})\\s*("+MON+")?"))){ dom=+m[1]; mon=m[2]?monIdx(m[2]):null; full=m[0]; }
+      else if(m = text.match(new RegExp("(\\d{1,2})\\s*("+MON+")"))){ dom=+m[1]; mon=monIdx(m[2]); full=m[0]; }
+      else if(m = text.match(new RegExp("("+MON+")\\s*(\\d{1,2})"))){ dom=+m[2]; mon=monIdx(m[1]); full=m[0]; }
+      if(dom!=null && dom>=1 && dom<=31){
+        const d=new Date(now); d.setHours(9,0,0,0); d.setDate(dom);
+        if(mon!=null){ d.setMonth(mon); if(d.getTime()<now.getTime()) d.setFullYear(d.getFullYear()+1); }
+        else if(d.getTime()<now.getTime()){ d.setMonth(d.getMonth()+1); }
+        absTarget=d; text=text.replace(full," ");
       }
     }
 
