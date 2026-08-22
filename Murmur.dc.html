@@ -540,6 +540,25 @@ class Component extends DCLogic {
       }
     }
 
+    // ── ไทย: แปลงเลขที่พูดเป็นคำ → ตัวเลข เฉพาะที่ติดกับคำบอกเวลา (ตีห้า→ตี 5, บ่ายสาม→บ่าย 3, หนึ่งทุ่ม→1 ทุ่ม) ──
+    {
+      const D="(?:ยี่สิบ|สามสิบ|สี่สิบ|ห้าสิบ|สิบ)?(?:เอ็ด|หนึ่ง|สอง|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า)?";
+      const units={"เอ็ด":1,"หนึ่ง":1,"สอง":2,"สาม":3,"สี่":4,"ห้า":5,"หก":6,"เจ็ด":7,"แปด":8,"เก้า":9};
+      const conv=w=>{
+        if(!w) return null;
+        if(units[w]) return units[w];
+        const mm=w.match(/^(ยี่|สอง|สาม|สี่|ห้า)?สิบ(เอ็ด|หนึ่ง|สอง|สาม|สี่|ห้า|หก|เจ็ด|แปด|เก้า)?$/);
+        if(mm){ const tens={undefined:1,"ยี่":2,"สอง":2,"สาม":3,"สี่":4,"ห้า":5}; return (tens[mm[1]]||1)*10 + (units[mm[2]]||0); }
+        return null;
+      };
+      // เลขที่อยู่หน้า คำบอกเวลา
+      text = text.replace(new RegExp("("+D+")\\s*(ทุ่ม|โมงเช้า|โมงเย็น|โมง|นาฬิกา|นาที)","g"),
+        (all,num,kw)=>{ const n=conv(num); return n!=null ? (" "+n+" "+kw+" ") : all; });
+      // เลขที่อยู่หลัง ตี / บ่าย
+      text = text.replace(new RegExp("(ตี|บ่าย)\\s*("+D+")","g"),
+        (all,kw,num)=>{ const n=conv(num); return n!=null ? (" "+kw+" "+n+" ") : all; });
+    }
+
     // ── ไทย: เวลาแบบระบุชั่วโมง ──
     if(/เที่ยงคืน/.test(text)){ hh=0; th24=true; text=text.replace(/เที่ยงคืน/," "); }
     else if(/เที่ยง(วัน|ตรง)?/.test(text)){ hh=12; th24=true; text=text.replace(/เที่ยง(วัน|ตรง)?/," "); }
