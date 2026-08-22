@@ -9,8 +9,8 @@ self.addEventListener("push", (event) => {
   const title = d.title || "Murmur";
   const options = {
     body: d.body || "",
-    icon: d.icon || "/assets/logo.png",
-    badge: d.badge || "/assets/logo.png",
+    icon: d.icon || "/icon.png",
+    badge: d.badge || "/icon.png",
     tag: d.tag,
     data: { url: d.url || "/Murmur.dc.html", taskId: d.taskId || null },
     actions: [
