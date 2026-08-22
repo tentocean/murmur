@@ -1,0 +1,15 @@
+{
+  "name": "Murmur",
+  "short_name": "Murmur",
+  "description": "Voice-first reminders and to-dos",
+  "start_url": "/Murmur.dc.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f5ead8",
+  "theme_color": "#f5ead8",
+  "icons": [
+    { "src": "/assets/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/assets/logo.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

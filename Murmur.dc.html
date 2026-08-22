@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f5ead8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Murmur">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/logo.png">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="_ds/organic-4704dbf3-4fc4-4859-918f-c6eb0f2839fa/styles.css">
+<script src="_ds/organic-4704dbf3-4fc4-4859-918f-c6eb0f2839fa/_ds_bundle.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  html,body{margin:0;height:100%}
+  body{background:var(--color-bg);min-height:100dvh;overscroll-behavior:none;-webkit-tap-highlight-color:transparent}
+  @keyframes mm-ring{0%{transform:scale(.75);opacity:.55}70%{opacity:0}100%{transform:scale(1.9);opacity:0}}
+  @keyframes mm-breathe{0%,100%{transform:scale(1)}50%{transform:scale(1.045)}}
+  @keyframes mm-dot{0%,80%,100%{transform:translateY(0);opacity:.4}40%{transform:translateY(-4px);opacity:1}}
+  @keyframes mm-in{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+  @keyframes mm-bar{from{opacity:0;transform:scaleY(.4)}to{opacity:1;transform:scaleY(1)}}
+  .mm-scroll::-webkit-scrollbar{width:0}
+</style>
+</helmet>
+<div style="position:relative;width:100%;max-width:520px;margin:0 auto;height:100dvh;background:var(--color-bg);overflow:hidden;font-family:var(--font-body)">
+
+  <!-- scroll area -->
+  <div class="mm-scroll" style="position:absolute;top:calc(env(safe-area-inset-top, 0px) + 14px);left:0;right:0;bottom:calc(150px + env(safe-area-inset-bottom, 0px));overflow-y:auto;padding:6px 22px 24px">
+
+    <!-- header -->
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin:4px 0 18px">
+      <div>
+        <div style="font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--color-accent-700);font-weight:700;margin-bottom:5px">{{ dateLabel }}</div>
+        <h2 style="margin:0;font-size:30px;line-height:1.05">{{ greeting }}</h2>
+      </div>
+      <div style="flex:none;display:flex;align-items:center;gap:8px;margin-top:4px">
+        <sc-if value="{{ cloudUser }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ logout }}" title="ออกจากระบบ" style="width:34px;height:34px;border:0;border-radius:50%;background:var(--color-surface);color:var(--color-neutral-700);cursor:pointer;display:grid;place-items:center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="M16 17l5-5-5-5"/><path d="M21 12H9"/></svg>
+          </button>
+        </sc-if>
+        <div style="display:flex;align-items:center;gap:6px;background:var(--color-accent-100);color:var(--color-accent-800);padding:8px 13px;border-radius:999px;font-weight:700;font-size:15px">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2c1 4-2 5-2 8a4 4 0 0 0 8 0c0-1-.5-2-1-3 2 1 3 3 3 6a7 7 0 1 1-13-3c1.5 2 3 1 3-1s-1-3 1-4Z"/></svg>
+          {{ streak }}
+        </div>
+      </div>
+    </div>
+
+    <!-- enable notifications -->
+    <sc-if value="{{ showPushBanner }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:11px;background:var(--color-accent-2-100);border:1px solid var(--color-accent-2-300);border-radius:18px;padding:11px 13px;margin-bottom:16px">
+        <span style="flex:none;width:34px;height:34px;border-radius:50%;background:var(--color-accent-2-200);color:var(--color-accent-2-800);display:grid;place-items:center">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </span>
+        <div style="flex:1;font-size:13px;line-height:1.35;color:var(--color-accent-2-800)">เปิดการแจ้งเตือน เพื่อรับเตือนตรงเวลาแม้ปิดแอป</div>
+        <button onClick="{{ enablePush }}" style="flex:none;border:0;border-radius:999px;background:var(--color-accent-2-600);color:#fff;font-family:var(--font-heading);font-size:13px;padding:8px 15px;cursor:pointer">เปิด</button>
+      </div>
+    </sc-if>
+
+    <!-- reminder banner -->
+    <sc-if value="{{ bannerOn }}" hint-placeholder-val="{{ true }}">
+      <div style="display:flex;align-items:center;gap:12px;background:var(--color-accent);color:var(--color-bg);border-radius:22px;padding:13px 15px;margin-bottom:18px;box-shadow:var(--shadow-md);animation:mm-in .4s ease both">
+        <span style="flex:none;width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,.18);display:grid;place-items:center">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+        </span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.8;font-weight:700">Reminder · {{ banner.whenLabel }}</div>
+          <div style="font-weight:600;font-size:15px;font-family:var(--font-heading)">{{ banner.title }}</div>
+        </div>
+        <button onClick="{{ speakBanner }}" title="Say it aloud" style="flex:none;width:38px;height:38px;border:0;border-radius:50%;background:rgba(255,255,255,.18);color:inherit;cursor:pointer;display:grid;place-items:center">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4V5Z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+        </button>
+        <button onClick="{{ dismissBanner }}" title="Dismiss" style="flex:none;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:inherit;cursor:pointer;display:grid;place-items:center;opacity:.85">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+      </div>
+    </sc-if>
+
+    <!-- progress -->
+    <div style="display:flex;align-items:center;gap:16px;background:var(--color-surface);border-radius:26px;padding:16px 18px;margin-bottom:22px;box-shadow:var(--shadow-sm)">
+      <div style="position:relative;width:56px;height:56px;flex:none">
+        <svg width="56" height="56" viewBox="0 0 56 56" style="transform:rotate(-90deg)">
+          <circle cx="28" cy="28" r="24" fill="none" stroke="var(--color-accent-200)" stroke-width="7"/>
+          <circle cx="28" cy="28" r="24" fill="none" stroke="var(--color-accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="{{ ringDash }}"/>
+        </svg>
+        <div style="position:absolute;inset:0;display:grid;place-items:center;font-family:var(--font-heading);font-size:16px">{{ progressPct }}</div>
+      </div>
+      <div style="flex:1">
+        <div style="font-family:var(--font-heading);font-size:18px;line-height:1.1">{{ progressTitle }}</div>
+        <div style="font-size:13px;color:var(--color-neutral-700);margin-top:2px">{{ progressSub }}</div>
+      </div>
+    </div>
+
+    <!-- TODAY -->
+    <div style="display:flex;align-items:baseline;gap:9px;margin:0 2px 11px">
+      <h5 style="margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">Today</h5>
+      <span style="font-size:12px;color:var(--color-neutral-500)">{{ todayCount }}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+      <sc-for list="{{ today }}" as="t" hint-placeholder-count="3">
+        <div style="display:flex;align-items:center;gap:13px;background:var(--color-surface);border-radius:20px;padding:14px 15px;box-shadow:var(--shadow-sm)">
+          <button onClick="{{ t.toggle }}" style="flex:none;width:26px;height:26px;border-radius:50%;border:2.5px solid var(--color-accent-400);background:transparent;cursor:pointer;display:grid;place-items:center;padding:0"></button>
+          <div style="flex:1;min-width:0">
+            <sc-if value="{{ t.editing }}" hint-placeholder-val="{{ false }}">
+              <input class="input" value="{{ editText }}" onChange="{{ editChange }}" onKeyDown="{{ editKey }}" onBlur="{{ editSave }}" autoFocus="{{ true }}" style="height:34px;min-height:34px"/>
+            </sc-if>
+            <sc-if value="{{ t.show }}" hint-placeholder-val="{{ true }}">
+              <div style="font-size:15.5px;font-weight:600;line-height:1.25;color:var(--color-text)">{{ t.title }}</div>
+              <sc-if value="{{ t.whenLabel }}" hint-placeholder-val="{{ true }}">
+                <span class="tag {{ t.tagClass }}" style="margin-top:6px;gap:5px">
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                  {{ t.whenLabel }}
+                </span>
+              </sc-if>
+            </sc-if>
+          </div>
+          <button onClick="{{ t.edit }}" title="Edit" style="flex:none;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--color-neutral-600);cursor:pointer;display:grid;place-items:center">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- UPCOMING -->
+    <div style="display:flex;align-items:baseline;gap:9px;margin:0 2px 11px">
+      <h5 style="margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">Upcoming</h5>
+      <span style="font-size:12px;color:var(--color-neutral-500)">{{ upcomingCount }}</span>
+    </div>
+
+    <!-- upcoming month calendar -->
+    <div style="background:var(--color-surface);border-radius:26px;padding:16px 16px 12px;margin-bottom:14px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;align-items:center;gap:8px;margin:0 2px 12px">
+        <div style="flex:1;font-family:var(--font-heading);font-size:17px;line-height:1">{{ calMonth }}</div>
+        <sc-if value="{{ calCanReset }}" hint-placeholder-val="{{ false }}">
+          <button onClick="{{ calReset }}" style="border:0;background:transparent;color:var(--color-accent-700);font-family:var(--font-body);font-size:12px;font-weight:700;cursor:pointer;padding:4px 8px;border-radius:999px">Today</button>
+        </sc-if>
+        <button onClick="{{ calPrev }}" title="Previous month" style="flex:none;width:30px;height:30px;border:0;border-radius:50%;background:var(--color-accent-100);color:var(--color-accent-800);cursor:pointer;display:grid;place-items:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+        </button>
+        <button onClick="{{ calNext }}" title="Next month" style="flex:none;width:30px;height:30px;border:0;border-radius:50%;background:var(--color-accent-100);color:var(--color-accent-800);cursor:pointer;display:grid;place-items:center">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+        </button>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:2px">
+        <span style="text-align:center;font-size:10px;font-weight:700;color:var(--color-neutral-500)">S</span>
+        <span style="text-align:center;font-size:10px;font-weight:700;color:var(--color-neutral-500)">M</span>
+        <span style="text-align:center;font-size:10px;font-weight:700;color:var(--color-neutral-500)">T</span>
+        <span style="text-align:center;font-size:10px;font-weight:700;color:var(--color-neutral-500)">W</span>
+        <span style="text-align:center;font-size:10px;font-weight:700;color:var(--color-neutral-500)">T</span>
+        <span style="text-align:center;font-size:10px;font-weight:700;color:var(--color-neutral-500)">F</span>
+        <span style="text-align:center;font-size:10px;font-weight:700;color:var(--color-neutral-500)">S</span>
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(7,1fr)">
+        <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35">
+          <div style="height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
+            <span style="width:26px;height:26px;display:grid;place-items:center;border-radius:50%;font-size:13px;font-weight:{{ c.weight }};background:{{ c.bg }};color:{{ c.color }}">{{ c.label }}</span>
+            <span style="width:5px;height:5px;border-radius:50%;background:{{ c.dotColor }}"></span>
+          </div>
+        </sc-for>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:flex-end;gap:5px;font-size:10px;color:var(--color-neutral-600);margin-top:8px">
+        <span style="width:6px;height:6px;border-radius:50%;background:var(--color-accent-2-600)"></span>has tasks
+      </div>
+    </div>
+
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
+      <sc-for list="{{ upcoming }}" as="t" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:13px;background:transparent;border:1.5px dashed var(--color-neutral-300);border-radius:20px;padding:13px 15px">
+          <button onClick="{{ t.toggle }}" style="flex:none;width:26px;height:26px;border-radius:50%;border:2.5px solid var(--color-neutral-400);background:transparent;cursor:pointer;display:grid;place-items:center;padding:0"></button>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:15.5px;font-weight:600;line-height:1.25">{{ t.title }}</div>
+            <span class="tag {{ t.tagClass }}" style="margin-top:6px;gap:5px">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="4"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+              {{ t.whenLabel }}
+            </span>
+          </div>
+          <button onClick="{{ t.edit }}" title="Edit" style="flex:none;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--color-neutral-600);cursor:pointer;display:grid;place-items:center">
+            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+          </button>
+        </div>
+      </sc-for>
+    </div>
+
+    <!-- DONE -->
+    <div style="display:flex;align-items:baseline;gap:9px;margin:0 2px 11px">
+      <h5 style="margin:0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-neutral-700)">Done</h5>
+      <span style="font-size:12px;color:var(--color-neutral-500)">{{ doneCount }}</span>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <sc-for list="{{ done }}" as="t" hint-placeholder-count="2">
+        <div style="display:flex;align-items:center;gap:13px;padding:8px 15px">
+          <button onClick="{{ t.toggle }}" style="flex:none;width:26px;height:26px;border-radius:50%;border:0;background:var(--color-accent-2-500);cursor:pointer;display:grid;place-items:center;padding:0">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
+          </button>
+          <div style="flex:1;font-size:15px;font-weight:600;color:var(--color-neutral-500);text-decoration:line-through">{{ t.title }}</div>
+        </div>
+      </sc-for>
+    </div>
+  </div>
+
+  <!-- listening / confirm overlay -->
+  <sc-if value="{{ overlayOn }}" hint-placeholder-val="{{ false }}">
+    <div onClick="{{ overlayTapOut }}" style="position:absolute;inset:0;z-index:8;background:color-mix(in srgb, #2e2b25 42%, transparent);backdrop-filter:blur(2px);display:flex;flex-direction:column;justify-content:flex-end">
+      <div onClick="{{ stop }}" style="background:var(--color-bg);border-radius:34px 34px 0 0;padding:26px 24px calc(30px + env(safe-area-inset-bottom, 0px));box-shadow:0 -18px 40px rgba(46,43,37,.28);animation:mm-in .34s ease both">
+
+        <sc-if value="{{ isListening }}" hint-placeholder-val="{{ true }}">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:18px">
+            <div style="display:flex;align-items:flex-end;gap:5px;height:34px">
+              <sc-for list="{{ bars }}" as="b" hint-placeholder-count="7">
+                <span style="width:5px;border-radius:3px;background:var(--color-accent);height:{{ b.h }};animation:mm-bar .5s ease {{ b.d }} infinite alternate"></span>
+              </sc-for>
+            </div>
+            <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700);font-weight:700">Listening…</div>
+            <div style="min-height:56px;text-align:center;font-family:var(--font-heading);font-size:22px;line-height:1.2;color:var(--color-text)">{{ transcript }}<span style="opacity:.4">▍</span></div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isConfirm }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:16px">
+            <div style="font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--color-accent-700);font-weight:700">Got it — add this?</div>
+            <div style="background:var(--color-surface);border-radius:22px;padding:18px 18px;box-shadow:var(--shadow-sm)">
+              <div style="font-family:var(--font-heading);font-size:22px;line-height:1.15;margin-bottom:12px">{{ parsed.title }}</div>
+              <sc-if value="{{ parsed.whenLabel }}" hint-placeholder-val="{{ true }}">
+                <span class="tag tag-accent" style="gap:6px;font-size:13px;padding:6px 13px">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>
+                  Reminder · {{ parsed.whenLabel }}
+                </span>
+              </sc-if>
+              <sc-if value="{{ parsed.noTime }}" hint-placeholder-val="{{ false }}">
+                <span class="tag tag-neutral" style="font-size:13px;padding:6px 13px">No time detected · Anytime today</span>
+              </sc-if>
+            </div>
+            <div style="display:flex;gap:10px">
+              <button class="btn btn-secondary" onClick="{{ retry }}" style="flex:none">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+                Retry
+              </button>
+              <button class="btn btn-primary" onClick="{{ confirmAdd }}" style="flex:1">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M12 5v14"/></svg>
+                Add task
+              </button>
+            </div>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- login screen -->
+  <sc-if value="{{ showLogin }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;z-index:20;background:var(--color-bg);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:40px 32px;padding-top:calc(env(safe-area-inset-top, 0px) + 40px)">
+      <div style="width:78px;height:78px;border-radius:24px;background:linear-gradient(160deg, var(--color-accent-400), var(--color-accent-600));display:grid;place-items:center;color:#fff;box-shadow:0 14px 28px -8px var(--color-accent-700);margin-bottom:18px">
+        <svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
+      </div>
+      <h1 style="margin:0 0 8px;font-size:38px;line-height:1">Murmur</h1>
+      <div style="color:var(--color-neutral-700);font-size:15px;line-height:1.45;max-width:260px;margin-bottom:26px">จดงานด้วยเสียง เตือนตรงเวลา<br>ใช้ได้ทุกอุปกรณ์</div>
+      <button onClick="{{ loginGoogle }}" style="display:flex;align-items:center;gap:11px;border:1px solid var(--color-divider);border-radius:999px;background:var(--color-surface);color:var(--color-text);font-family:var(--font-heading);font-size:15px;padding:13px 22px;cursor:pointer;box-shadow:var(--shadow-sm)">
+        <svg width="19" height="19" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        เข้าสู่ระบบด้วย Google
+      </button>
+    </div>
+  </sc-if>
+
+  <!-- voice dock -->
+  <div style="position:absolute;left:0;right:0;bottom:0;z-index:7;background:linear-gradient(to top, var(--color-bg) 62%, transparent);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:34px 0 calc(26px + env(safe-area-inset-bottom, 0px));gap:12px">
+    <sc-if value="{{ showType }}" hint-placeholder-val="{{ false }}">
+      <div style="width:calc(100% - 44px);display:flex;gap:8px;align-items:center">
+        <input class="input" placeholder="พิมพ์งาน… เช่น จ่ายบิลพรุ่งนี้บ่าย 3 โมง" value="{{ typeText }}" onChange="{{ typeChange }}" onKeyDown="{{ typeKey }}" autoFocus="{{ true }}" style="flex:1"/>
+        <button class="btn btn-primary btn-icon" onClick="{{ typeSubmit }}" style="width:44px;height:44px">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ showOrb }}" hint-placeholder-val="{{ true }}">
+      <div style="position:relative;width:80px;height:80px;display:grid;place-items:center">
+        <span style="position:absolute;width:80px;height:80px;border-radius:50%;background:var(--color-accent);opacity:.28;animation:mm-ring 2.4s ease-out infinite"></span>
+        <span style="position:absolute;width:80px;height:80px;border-radius:50%;background:var(--color-accent);opacity:.28;animation:mm-ring 2.4s ease-out 1.2s infinite"></span>
+        <button onClick="{{ startListening }}" style="position:relative;width:72px;height:72px;border-radius:50%;border:0;cursor:pointer;background:linear-gradient(160deg, var(--color-accent-400), var(--color-accent-600));box-shadow:0 10px 22px -6px var(--color-accent-700);display:grid;place-items:center;color:#fff;animation:mm-breathe 3.4s ease-in-out infinite">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0"/><path d="M12 17v5"/></svg>
+        </button>
+      </div>
+      <button onClick="{{ toggleType }}" style="display:flex;align-items:center;gap:7px;border:0;background:transparent;cursor:pointer;color:var(--color-neutral-600);font-family:var(--font-body);font-size:13px">
+        <span style="display:flex;gap:3px;align-items:flex-end;height:9px">
+          <span style="width:3px;height:5px;border-radius:2px;background:var(--color-accent-2-500);animation:mm-dot 1.2s ease-in-out infinite"></span>
+          <span style="width:3px;height:9px;border-radius:2px;background:var(--color-accent-2-500);animation:mm-dot 1.2s ease-in-out .2s infinite"></span>
+          <span style="width:3px;height:6px;border-radius:2px;background:var(--color-accent-2-500);animation:mm-dot 1.2s ease-in-out .4s infinite"></span>
+        </span>
+        Listening for <b style="color:var(--color-accent-700);font-weight:700">"Hey&nbsp;Murmur"</b> · or type
+      </button>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script>
+  // ┌──────────────────────────────────────────────────────────────┐
+  // │  วางค่าจาก Supabase project ของคุณ 2 ค่านี้ แล้วแอปจะเข้าโหมด cloud   │
+  // │  (login Google + เก็บงานบน cloud + web push) อัตโนมัติ             │
+  // │  ถ้าเว้นว่างไว้ = โหมดเดโม่ (เก็บในเครื่อง ไม่ต้องล็อกอิน)              │
+  // └──────────────────────────────────────────────────────────────┘
+  window.MURMUR_CONFIG = {
+    SUPABASE_URL: "https://qiuktriwvzwvyvykvaxe.supabase.co",       // เช่น https://xxxxxxxx.supabase.co
+    SUPABASE_ANON_KEY: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFpdWt0cml3dnp3dnl2eWt2YXhlIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODczODI2NDcsImV4cCI6MjEwMjk1ODY0N30.F8pqH9vLH45IcaQ21Zz43HEHfOYxkDwzpXHuw_Ty8_E",  // anon public key (เปิดเผยได้)
+    VAPID_PUBLIC_KEY: "BOSSfQFvLRrtb9nRI64lYT4c3_dxcPLymYAAbDtiJ2oNrmz2R5Fg87W_Qi88goO0WUX2GDr6a_gX3vYhJiX_BbA"
+  };
+  if ("serviceWorker" in navigator) {
+    window.addEventListener("load", () => {
+      navigator.serviceWorker.register("./sw.js").catch(() => {});
+    });
+  }
+</script>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  constructor(p){
+    super(p);
+    const CFG = (typeof window !== "undefined" && window.MURMUR_CONFIG) || {};
+    this.cfg = CFG;
+    this.cloud = !!(CFG.SUPABASE_URL && CFG.SUPABASE_ANON_KEY && window.supabase);
+    this.sb = this.cloud ? window.supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_ANON_KEY) : null;
+    const now = Date.now(), H = 3600e3, M = 60e3;
+    const seed = [
+      { id: 1, title: "Water the ferns on the balcony", ts: null, done: false },
+      { id: 2, title: "Reply to Dana about the venue", ts: now - 40*M, done: false },
+      { id: 3, title: "Call the pharmacy", ts: now + 45*M, done: false },
+      { id: 4, title: "Dentist checkup", ts: now + 2*24*H, done: false },
+      { id: 5, title: "Pick up the framed print", ts: now + 4*24*H, done: false },
+      { id: 6, title: "Morning walk", ts: now - 6*H, done: true },
+      { id: 7, title: "Take vitamins", ts: now - 5*H, done: true },
+    ];
+    this.state = {
+      now,
+      tasks: this.cloud ? [] : seed,
+      user: null,
+      authReady: !this.cloud,
+      pushOn: false,
+      phase: "idle",          // idle | listening | confirm
+      transcript: "",
+      parsed: null,
+      editingId: null,
+      editText: "",
+      typing: false,
+      typeText: "",
+      bannerId: 3,
+      bannerDismissed: false,
+      calOffset: 0,          // months away from the current month
+    };
+    this.samples = [
+      "Call the pharmacy tomorrow at 5pm",
+      "เตือนให้โทรหาหมอพรุ่งนี้บ่าย 3 โมง",
+      "Remind me to submit the invoice on Friday at 9am",
+      "ประชุมทีมวันจันทร์หน้า 10 โมงเช้า",
+      "Water the plants tonight",
+      "ซื้อของอีก 2 ชั่วโมง",
+      "Book a dentist appointment next Monday at 10am",
+      "อย่าลืมจ่ายบิลค่ำนี้ 2 ทุ่ม",
+    ];
+    this._si = 0;
+  }
+
+  componentWillUnmount(){ clearInterval(this._timer); clearTimeout(this._t1); clearTimeout(this._t2); }
+
+  async componentDidMount(){
+    if(!this.cloud) return;
+    try{
+      const { data:{ session } } = await this.sb.auth.getSession();
+      this.setState({ user: session ? session.user : null, authReady: true });
+      if(session) this.loadTasks();
+      this.sb.auth.onAuthStateChange((_e, sess)=>{
+        this.setState({ user: sess ? sess.user : null });
+        if(sess) this.loadTasks(); else this.setState({ tasks: [] });
+      });
+      if(navigator.serviceWorker){
+        navigator.serviceWorker.addEventListener("message", (ev)=>{
+          const m = ev.data || {};
+          if(m.type==="notification-action" && m.taskId){
+            if(m.action==="done") this.toggle(m.taskId);
+            else if(m.action==="snooze") this.snooze(m.taskId);
+          }
+        });
+      }
+    }catch(e){ this.setState({ authReady: true }); }
+  }
+
+  loginGoogle(){ this.sb.auth.signInWithOAuth({ provider:"google", options:{ redirectTo: location.href.split("?")[0] } }); }
+  logout(){ this.sb.auth.signOut(); this.setState({ user:null, tasks:[], pushOn:false }); }
+
+  async loadTasks(){
+    const { data, error } = await this.sb.from("murmur_tasks").select("*").order("created_at");
+    if(!error && data){
+      this.setState({ tasks: data.map(r=>({ id:r.id, title:r.title, ts:r.ts?new Date(r.ts).getTime():null, done:r.done })) });
+    }
+  }
+
+  async addTask(p){
+    if(this.cloud && this.state.user){
+      const { data, error } = await this.sb.from("murmur_tasks")
+        .insert({ user_id:this.state.user.id, title:p.title, ts:p.ts?new Date(p.ts).toISOString():null, done:false })
+        .select().single();
+      if(!error && data){
+        this.setState(s=>({ tasks:[...s.tasks, { id:data.id, title:data.title, ts:data.ts?new Date(data.ts).getTime():null, done:false }] }));
+      }
+    } else {
+      const id = Date.now();
+      this.setState(s=>({ tasks:[...s.tasks, { id, title:p.title, ts:p.ts, done:false }] }));
+    }
+  }
+
+  snooze(id){
+    const t=this.state.tasks.find(x=>x.id===id); if(!t) return;
+    const ts=(t.ts||Date.now())+10*60e3;
+    this.setState(s=>({ tasks:s.tasks.map(x=>x.id===id?{...x,ts}:x) }));
+    if(this.cloud) this.sb.from("murmur_tasks").update({ ts:new Date(ts).toISOString(), notified_at:null }).eq("id",id);
+  }
+
+  urlB64(base64){
+    const pad="=".repeat((4-base64.length%4)%4);
+    const b=(base64+pad).replace(/-/g,"+").replace(/_/g,"/");
+    const raw=atob(b), arr=new Uint8Array(raw.length);
+    for(let i=0;i<raw.length;i++) arr[i]=raw.charCodeAt(i);
+    return arr;
+  }
+
+  async enablePush(){
+    try{
+      if(!("Notification" in window) || !("serviceWorker" in navigator)){ this.setState({pushMsg:"อุปกรณ์นี้ไม่รองรับ"}); return; }
+      const perm = await Notification.requestPermission();
+      if(perm!=="granted"){ this.setState({pushMsg:"ไม่ได้รับอนุญาต"}); return; }
+      const reg = await navigator.serviceWorker.register("./sw.js");
+      await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({ userVisibleOnly:true, applicationServerKey:this.urlB64(this.cfg.VAPID_PUBLIC_KEY) });
+      const j = sub.toJSON();
+      await this.sb.from("murmur_push_subscriptions").upsert(
+        { user_id:this.state.user.id, endpoint:j.endpoint, p256dh:j.keys.p256dh, auth:j.keys.auth },
+        { onConflict:"endpoint" }
+      );
+      this.setState({ pushOn:true, pushMsg:null });
+    }catch(e){ this.setState({ pushMsg:"เปิดไม่สำเร็จ" }); }
+  }
+
+  speak(text){
+    try{
+      const s = window.speechSynthesis; if(!s) return;
+      s.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.rate = 1; u.pitch = 1;
+      s.speak(u);
+    }catch(e){}
+  }
+
+  // ---- time parsing (English + ไทย) ----
+  parse(raw){
+    // normalise Unicode (NFC) so decomposed Thai input matches the composed literals below,
+    // then map Thai digits ๐-๙ → 0-9
+    raw = String(raw).normalize("NFC").replace(/[๐-๙]/g, d=>"๐๑๒๓๔๕๖๗๘๙".indexOf(d));
+    let text = " " + raw.trim() + " ";
+    const now = new Date(this.state.now);
+    let when = null, hh = null, mm = 0, ampm = null, th24 = false, dayOffset = null, m;
+    const time = (h,mn)=>{ const d=new Date(now); d.setSeconds(0,0); d.setHours(h,mn||0); return d; };
+    const clean = s => {
+      s = s.replace(/\s+/g," ").trim()
+        .replace(/^(remind me to|remind me|remember to|i need to|i have to|add|note to)\s+/i,"")
+        .replace(/^(ช่วย)?(เตือน|จด|โน้ต|บันทึก|เพิ่ม|ฝาก(เตือน)?)(ให้|ว่า|โน้ตว่า|รายการ|ที)?\s*/,"")
+        .replace(/^(อย่าลืม|ต้อง|จะ|ขอ)\s*/,"");
+      // strip dangling Thai connectors left where a time/day token was removed
+      for(let i=0;i<3;i++) s = s.replace(/\s*(ตอน|เวลา|ในวัน|ใน|วันที่|วัน|ที่)\s*$/,"").trim();
+      return s.replace(/[.,]+$/,"").trim();
+    };
+
+    // ── ไทย: relative (อีก N ชั่วโมง / นาที / ครึ่งชั่วโมง) ──
+    if(m = text.match(/อีก\s*(\d+)\s*(ชั่วโมง|ชม\.?|นาที|น\.)/)){
+      const n=+m[1], d=new Date(now);
+      if(/ชั่วโมง|ชม/.test(m[2])) d.setHours(d.getHours()+n); else d.setMinutes(d.getMinutes()+n);
+      when=d; text=text.replace(m[0]," ");
+    } else if(/(อีก\s*)?ครึ่งชั่วโมง/.test(text)){
+      const d=new Date(now); d.setMinutes(d.getMinutes()+30); when=d;
+      text=text.replace(/(อีก\s*)?ครึ่งชั่วโมง/," ");
+    }
+
+    // ── ไทย: วัน (วันนี้ / พรุ่งนี้ / มะรืน / ชื่อวัน[หน้า]) ──
+    if(dayOffset==null){
+      if(/วันนี้/.test(text)){ dayOffset=0; text=text.replace(/วันนี้/," "); }
+      else if(/พรุ่งนี้|พรุ้งนี้/.test(text)){ dayOffset=1; text=text.replace(/พรุ่งนี้|พรุ้งนี้/," "); }
+      else if(/มะรืน(นี้)?/.test(text)){ dayOffset=2; text=text.replace(/มะรืน(นี้)?/," "); }
+      else if(m = text.match(/(?:วัน)?(อาทิตย์|จันทร์|อังคาร|พุธ|พฤหัสบดี|พฤหัส|ศุกร์|เสาร์)(หน้า)?/)){
+        const map={"อาทิตย์":0,"จันทร์":1,"อังคาร":2,"พุธ":3,"พฤหัสบดี":4,"พฤหัส":4,"ศุกร์":5,"เสาร์":6};
+        let diff=(map[m[1]] - now.getDay()+7)%7; if(diff===0) diff=7; if(m[2]&&diff<7) diff+=7;
+        dayOffset=diff; text=text.replace(m[0]," ");
+      }
+    }
+
+    // ── ไทย: เวลาแบบระบุชั่วโมง ──
+    if(/เที่ยงคืน/.test(text)){ hh=0; th24=true; text=text.replace(/เที่ยงคืน/," "); }
+    else if(/เที่ยง(วัน|ตรง)?/.test(text)){ hh=12; th24=true; text=text.replace(/เที่ยง(วัน|ตรง)?/," "); }
+    else if(m = text.match(/ตี\s*(\d{1,2})/)){ hh=+m[1]; th24=true; text=text.replace(m[0]," "); }
+    else if(/บ่ายโมง/.test(text)){ hh=13; th24=true; text=text.replace(/บ่ายโมง/," "); }
+    else if(m = text.match(/บ่าย\s*(\d{1,2})\s*(?:โมง)?/)){ hh=(+m[1])+12; th24=true; text=text.replace(m[0]," "); }
+    else if(m = text.match(/(\d{1,2})\s*โมงเช้า/)){ hh=+m[1]; th24=true; text=text.replace(m[0]," "); }
+    else if(m = text.match(/(\d{1,2})\s*โมงเย็น/)){ hh=(+m[1])+12; th24=true; text=text.replace(m[0]," "); }
+    else if(m = text.match(/(\d{1,2})\s*ทุ่ม/)){ hh=(+m[1])+18; th24=true; text=text.replace(m[0]," "); }
+    else if(m = text.match(/(\d{1,2})\s*นาฬิกา/)){ hh=+m[1]; th24=true; text=text.replace(m[0]," "); }
+    else if(m = text.match(/(\d{1,2})\s*โมง/)){ hh=+m[1]; th24=true; text=text.replace(m[0]," "); }
+    // ไทย: นาที (ครึ่ง / N นาที) ที่ตามหลังชั่วโมง
+    if(th24){
+      if(m = text.match(/(\d{1,2})\s*นาที/)){ mm=+m[1]; text=text.replace(m[0]," "); }
+      else if(/ครึ่ง/.test(text)){ mm=30; text=text.replace(/ครึ่ง/," "); }
+    }
+
+    // ── ไทย: ช่วงเวลาแบบกว้าง (เช้านี้ / บ่ายนี้ / เย็นนี้ / ค่ำนี้ / คืนนี้ / เช้า…) ──
+    if(/เช้านี้/.test(text)){ if(dayOffset==null)dayOffset=0; if(hh==null){hh=9;th24=true;} text=text.replace(/เช้านี้/," "); }
+    if(/บ่ายนี้/.test(text)){ if(dayOffset==null)dayOffset=0; if(hh==null){hh=15;th24=true;} text=text.replace(/บ่ายนี้/," "); }
+    if(/เย็นนี้/.test(text)){ if(dayOffset==null)dayOffset=0; if(hh==null){hh=17;th24=true;} text=text.replace(/เย็นนี้/," "); }
+    if(/ค่ำนี้/.test(text)){ if(dayOffset==null)dayOffset=0; if(hh==null){hh=19;th24=true;} text=text.replace(/ค่ำนี้/," "); }
+    if(/คืนนี้/.test(text)){ if(dayOffset==null)dayOffset=0; if(hh==null){hh=20;th24=true;} text=text.replace(/คืนนี้/," "); }
+    if(hh==null){
+      if(/ตอนเช้า|เช้า/.test(text)){ hh=9;  th24=true; text=text.replace(/ตอนเช้า|เช้า/," "); }
+      else if(/ตอนบ่าย|บ่าย/.test(text)){ hh=15; th24=true; text=text.replace(/ตอนบ่าย|บ่าย/," "); }
+      else if(/ตอนเย็น|เย็น/.test(text)){ hh=17; th24=true; text=text.replace(/ตอนเย็น|เย็น/," "); }
+      else if(/ตอนค่ำ|ค่ำ/.test(text)){ hh=19; th24=true; text=text.replace(/ตอนค่ำ|ค่ำ/," "); }
+      else if(/กลางคืน|คืน/.test(text)){ hh=20; th24=true; text=text.replace(/กลางคืน|คืน/," "); }
+    }
+
+    // ── English: at H(:MM)(am|pm) ──
+    const tm = text.match(/\bat\s+(\d{1,2})(?::(\d{2}))?\s*(am|pm)?/i) || text.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/i);
+    if(!th24 && hh==null && tm){ hh=+tm[1]; mm=tm[2]?+tm[2]:0; ampm=tm[3]?tm[3].toLowerCase():null; text=text.replace(tm[0]," "); }
+
+    if(dayOffset==null){
+      if(/\btomorrow\b/i.test(text)){ dayOffset=1; text=text.replace(/\btomorrow\b/i," "); }
+      else if(/\btoday\b/i.test(text)){ dayOffset=0; text=text.replace(/\btoday\b/i," "); }
+      else if(/\btonight\b|\bthis evening\b/i.test(text)){ dayOffset=0; if(hh==null){hh=8;ampm="pm";} text=text.replace(/\btonight\b|\bthis evening\b/i," "); }
+      else if(/\bthis afternoon\b/i.test(text)){ dayOffset=0; if(hh==null){hh=3;ampm="pm";} text=text.replace(/\bthis afternoon\b/i," "); }
+      else if(/\bthis morning\b/i.test(text)){ dayOffset=0; if(hh==null){hh=9;ampm="am";} text=text.replace(/\bthis morning\b/i," "); }
+    }
+
+    const days=["sunday","monday","tuesday","wednesday","thursday","friday","saturday"];
+    const dm = text.match(/\b(next\s+)?(sunday|monday|tuesday|wednesday|thursday|friday|saturday)\b/i);
+    if(dm && dayOffset==null){
+      const target=days.indexOf(dm[2].toLowerCase());
+      let diff=(target - now.getDay()+7)%7; if(diff===0) diff=7; if(dm[1]&&diff<7) diff+=7;
+      dayOffset=diff; text=text.replace(dm[0]," ");
+    }
+
+    const rel = text.match(/\bin\s+(\d+)\s*(min|mins|minute|minutes|hour|hours|hr|hrs)\b/i);
+    if(!when && rel){
+      const n=+rel[1]; const d=new Date(now);
+      if(/hour|hr/i.test(rel[2])) d.setHours(d.getHours()+n); else d.setMinutes(d.getMinutes()+n);
+      when=d; text=text.replace(rel[0]," ");
+    }
+
+    if(!when && hh!=null){
+      if(!th24){
+        if(ampm==="pm"&&hh<12) hh+=12; if(ampm==="am"&&hh===12) hh=0;
+        if(ampm==null && hh<=7) hh+=12; // assume afternoon for bare small hours
+      }
+      when=time(hh,mm);
+      if(dayOffset) when.setDate(when.getDate()+dayOffset);
+      else if(dayOffset==null && when.getTime()<now.getTime()) when.setDate(when.getDate()+1);
+    } else if(!when && dayOffset!=null){
+      const d=new Date(now); d.setDate(d.getDate()+dayOffset); d.setHours(9,0,0,0); when=d;
+    }
+
+    const title = clean(text) || raw.trim();
+    return { title: title.charAt(0).toUpperCase()+title.slice(1), ts: when?when.getTime():null };
+  }
+
+  fmt(ts){
+    if(ts==null) return null;
+    const d=new Date(ts), now=new Date(this.state.now);
+    const t=d.toLocaleTimeString([], {hour:"numeric",minute:"2-digit"});
+    const day0=new Date(now); day0.setHours(0,0,0,0);
+    const diff=Math.floor((new Date(d).setHours(0,0,0,0)-day0.getTime())/(24*3600e3));
+    if(diff<0) return "Overdue · "+t;
+    if(diff===0) return "Today · "+t;
+    if(diff===1) return "Tomorrow · "+t;
+    if(diff<7) return d.toLocaleDateString([], {weekday:"long"})+" · "+t;
+    return d.toLocaleDateString([], {month:"short",day:"numeric"})+" · "+t;
+  }
+
+  // ---- voice flow ----
+  startListening(){
+    if(this.state.phase!=="idle") return;
+    const phrase=this.samples[this._si++ % this.samples.length];
+    this.setState({phase:"listening", transcript:"", typing:false});
+    const words=phrase.split(" "); let i=0;
+    this._timer=setInterval(()=>{
+      i++;
+      this.setState({transcript: words.slice(0,i).join(" ")});
+      if(i>=words.length){
+        clearInterval(this._timer);
+        this._t1=setTimeout(()=>{
+          const p=this.parse(phrase);
+          this.setState({phase:"confirm", parsed:p});
+        }, 420);
+      }
+    }, 190);
+  }
+  retry(){ clearInterval(this._timer); this.setState({phase:"idle",transcript:"",parsed:null}); this._t2=setTimeout(()=>this.startListening(),120); }
+  stop(){ /* swallow clicks inside sheet */ }
+  overlayTapOut(){ clearInterval(this._timer); clearTimeout(this._t1); this.setState({phase:"idle",transcript:"",parsed:null}); }
+
+  confirmAdd(){
+    const p=this.state.parsed; if(!p) return;
+    this.addTask(p);
+    this.setState({ phase:"idle", transcript:"", parsed:null });
+    this.speak(p.ts ? `Reminder set. ${p.title}, ${this.fmt(p.ts).replace("·","at")}.` : `Added. ${p.title}.`);
+  }
+
+  addTyped(){
+    const raw=this.state.typeText.trim(); if(!raw) return;
+    const p=this.parse(raw);
+    this.addTask(p);
+    this.setState({ typeText:"", typing:false });
+    this.speak(p.ts ? `Reminder set. ${p.title}.` : `Added. ${p.title}.`);
+  }
+
+  toggle(id){
+    const t=this.state.tasks.find(x=>x.id===id); if(!t) return;
+    const done=!t.done;
+    this.setState(s=>({tasks:s.tasks.map(x=>x.id===id?{...x,done}:x)}));
+    if(this.cloud) this.sb.from("murmur_tasks").update({done}).eq("id",id);
+  }
+  startEdit(id){ const t=this.state.tasks.find(x=>x.id===id); this.setState({editingId:id, editText:t?t.title:""}); }
+  saveEdit(){ const id=this.state.editingId; if(id==null) return; const v=this.state.editText.trim();
+    this.setState(s=>({editingId:null, tasks:v?s.tasks.map(t=>t.id===id?{...t,title:v}:t):s.tasks}));
+    if(this.cloud && v) this.sb.from("murmur_tasks").update({title:v}).eq("id",id); }
+
+  calShift(n){ this.setState(s=>({calOffset:(s.calOffset||0)+n})); }
+  calReset(){ this.setState({calOffset:0}); }
+
+  renderVals(){
+    const s=this.state, self=this;
+    const now=s.now;
+    const day0=new Date(now); day0.setHours(0,0,0,0);
+    const view=t=>({
+      id:t.id, title:t.title, whenLabel:this.fmt(t.ts),
+      tagClass: t.ts==null ? "tag-neutral" : (t.ts < now ? "tag-accent" : (new Date(t.ts).setHours(0,0,0,0)===day0.getTime() ? "tag-accent" : "tag-accent-2")),
+      editing: s.editingId===t.id,
+      show: s.editingId!==t.id,
+      toggle:()=>self.toggle(t.id),
+      edit:()=>self.startEdit(t.id),
+    });
+    const active=s.tasks.filter(t=>!t.done);
+    const isToday=t=> t.ts==null || new Date(t.ts).setHours(0,0,0,0)<=day0.getTime();
+    const today=active.filter(isToday).sort((a,b)=>(a.ts||Infinity)-(b.ts||Infinity)).map(view);
+    const upcoming=active.filter(t=>!isToday(t)).sort((a,b)=>a.ts-b.ts).map(view);
+    const done=s.tasks.filter(t=>t.done).map(view);
+
+    const totalToday=today.length+done.length;
+    const pct= totalToday? Math.round(done.length/totalToday*100):0;
+    const C=2*Math.PI*24;
+
+    const banner=s.tasks.find(t=>t.id===s.bannerId && !t.done);
+    const bannerOn = !!banner && !s.bannerDismissed;
+
+    const bars=[14,24,30,20,32,18,12].map((h,i)=>({h:h+"px", d:(i*0.08).toFixed(2)+"s"}));
+
+    // ── mini month calendar for Upcoming: dot on days that have an active task ──
+    const calBase=new Date(now); calBase.setDate(1); calBase.setMonth(calBase.getMonth()+(s.calOffset||0));
+    const yr=calBase.getFullYear(), mo=calBase.getMonth();
+    const todayMid=new Date(now); todayMid.setHours(0,0,0,0);
+    const startDow=new Date(yr,mo,1).getDay(), daysInMonth=new Date(yr,mo+1,0).getDate();
+    const taskDays={};
+    s.tasks.filter(t=>!t.done && t.ts!=null).forEach(t=>{
+      const d=new Date(t.ts);
+      if(d.getFullYear()===yr && d.getMonth()===mo) taskDays[d.getDate()]=(taskDays[d.getDate()]||0)+1;
+    });
+    const calCells=[];
+    for(let i=0;i<startDow;i++) calCells.push({key:"b"+i, label:"", bg:"transparent", color:"transparent", dotColor:"transparent", weight:500});
+    for(let d=1; d<=daysInMonth; d++){
+      const cellMid=new Date(yr,mo,d).getTime();
+      const isToday=cellMid===todayMid.getTime(), past=cellMid<todayMid.getTime(), has=!!taskDays[d];
+      calCells.push({
+        key:"d"+d, label:String(d),
+        bg: isToday ? "var(--color-accent)" : "transparent",
+        color: isToday ? "#fff" : (past ? "var(--color-neutral-400)" : "var(--color-text)"),
+        dotColor: has ? (isToday ? "#fff" : (past ? "var(--color-neutral-400)" : "var(--color-accent-2-600)")) : "transparent",
+        weight: isToday||has ? 700 : (past ? 400 : 600),
+      });
+    }
+    const calMonth=calBase.toLocaleDateString([], {month:"long", year:"numeric"});
+
+    const canNotify = typeof Notification !== "undefined";
+    return {
+      cloudUser: this.cloud && !!s.user,
+      showLogin: this.cloud && s.authReady && !s.user,
+      showPushBanner: this.cloud && !!s.user && !s.pushOn && (!canNotify || Notification.permission !== "granted"),
+      loginGoogle: ()=>self.loginGoogle(),
+      logout: ()=>self.logout(),
+      enablePush: ()=>self.enablePush(),
+
+      calCells, calMonth,
+      calPrev: ()=>self.calShift(-1),
+      calNext: ()=>self.calShift(1),
+      calReset: ()=>self.calReset(),
+      calCanReset: (s.calOffset||0)!==0,
+      clock: new Date(now).toLocaleTimeString([], {hour:"numeric",minute:"2-digit"}).replace(/\s?[AP]M/i,""),
+      dateLabel: new Date(now).toLocaleDateString([], {weekday:"long",month:"long",day:"numeric"}),
+      greeting: (new Date(now).getHours()<12?"Good morning":new Date(now).getHours()<18?"Good afternoon":"Good evening"),
+      streak: "6",
+      bannerOn, banner: banner?{title:banner.title, whenLabel:this.fmt(banner.ts)}:{title:"",whenLabel:""},
+      speakBanner: ()=> banner && self.speak(`Reminder. ${banner.title}, ${this.fmt(banner.ts)}.`),
+      dismissBanner: ()=> self.setState({bannerDismissed:true}),
+
+      ringDash: `${(C*pct/100).toFixed(1)} ${C.toFixed(1)}`,
+      progressPct: pct+"%",
+      progressTitle: done.length===totalToday && totalToday>0 ? "All done today" : `${done.length} of ${totalToday} done`,
+      progressSub: today.length? `${today.length} left · keep the streak going` : "Nothing left — nice work",
+
+      today, upcoming, done,
+      todayCount: today.length, upcomingCount: upcoming.length, doneCount: done.length,
+
+      editText: s.editText,
+      editChange: e=>self.setState({editText:e.target.value}),
+      editKey: e=>{ if(e.key==="Enter"){e.preventDefault(); self.saveEdit();} if(e.key==="Escape") self.setState({editingId:null}); },
+      editSave: ()=>self.saveEdit(),
+
+      overlayOn: s.phase!=="idle",
+      isListening: s.phase==="listening",
+      isConfirm: s.phase==="confirm",
+      transcript: s.transcript,
+      parsed: s.parsed? {title:s.parsed.title, whenLabel:this.fmt(s.parsed.ts), noTime: s.parsed.ts==null} : {title:"",whenLabel:"",noTime:false},
+      bars,
+      startListening: ()=>self.startListening(),
+      retry: ()=>self.retry(),
+      stop: e=>{ e.stopPropagation(); },
+      overlayTapOut: ()=>self.overlayTapOut(),
+      confirmAdd: ()=>self.confirmAdd(),
+
+      showOrb: !s.typing,
+      showType: s.typing,
+      toggleType: ()=>self.setState({typing:true}),
+      typeText: s.typeText,
+      typeChange: e=>self.setState({typeText:e.target.value}),
+      typeKey: e=>{ if(e.key==="Enter"){e.preventDefault(); self.addTyped();} if(e.key==="Escape") self.setState({typing:false,typeText:""}); },
+      typeSubmit: ()=>self.addTyped(),
+    };
+  }
+}
+</script>
+</body>
+</html>
