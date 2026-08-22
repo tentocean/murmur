@@ -379,7 +379,7 @@ class Component extends DCLogic {
     this._si = 0;
   }
 
-  componentWillUnmount(){ clearInterval(this._timer); clearTimeout(this._t1); clearTimeout(this._t2); }
+  componentWillUnmount(){ clearInterval(this._timer); clearTimeout(this._t1); clearTimeout(this._t2); this._stopRec(); }
 
   async componentDidMount(){
     if(!this.cloud) return;
@@ -597,27 +597,44 @@ class Component extends DCLogic {
     return d.toLocaleDateString([], {month:"short",day:"numeric"})+" · "+t;
   }
 
-  // ---- voice flow ----
+  // ---- voice flow (Web Speech API — ฟังเสียงจริง) ----
   startListening(){
     if(this.state.phase!=="idle") return;
-    const phrase=this.samples[this._si++ % this.samples.length];
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR){ this.setState({typing:true}); return; }        // เครื่องไม่รองรับ → พิมพ์แทน
+    const rec = new SR();
+    this._rec = rec; this._recStopped = false; this._finalText = "";
+    rec.lang = "th-TH";
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.maxAlternatives = 1;
     this.setState({phase:"listening", transcript:"", typing:false});
-    const words=phrase.split(" "); let i=0;
-    this._timer=setInterval(()=>{
-      i++;
-      this.setState({transcript: words.slice(0,i).join(" ")});
-      if(i>=words.length){
-        clearInterval(this._timer);
-        this._t1=setTimeout(()=>{
-          const p=this.parse(phrase);
-          this.setState({phase:"confirm", parsed:p});
-        }, 420);
+    rec.onresult = (e)=>{
+      let interim="";
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        const t=e.results[i][0].transcript;
+        if(e.results[i].isFinal) this._finalText+=t; else interim+=t;
       }
-    }, 190);
+      this.setState({transcript:(this._finalText+interim).trim()});
+    };
+    rec.onerror = (e)=>{
+      this._recStopped = true;
+      // ไม่ได้อนุญาตไมค์ → เปิดช่องพิมพ์แทน, กรณีอื่น (ไม่ได้ยิน ฯลฯ) → กลับหน้าเดิม
+      if(e && e.error==="not-allowed") this.setState({phase:"idle", transcript:"", typing:true});
+      else this.setState({phase:"idle", transcript:""});
+    };
+    rec.onend = ()=>{
+      if(this._recStopped){ this._recStopped=false; return; }
+      const text=(this._finalText||"").trim();
+      if(text) this.setState({phase:"confirm", parsed:this.parse(text)});
+      else this.setState({phase:"idle", transcript:""});
+    };
+    try{ rec.start(); }catch(_){ this.setState({phase:"idle"}); }
   }
-  retry(){ clearInterval(this._timer); this.setState({phase:"idle",transcript:"",parsed:null}); this._t2=setTimeout(()=>this.startListening(),120); }
+  _stopRec(){ if(this._rec){ this._recStopped=true; try{this._rec.abort();}catch(_){} this._rec=null; } }
+  retry(){ this._stopRec(); this.setState({phase:"idle",transcript:"",parsed:null}); this._t2=setTimeout(()=>this.startListening(),150); }
   stop(){ /* swallow clicks inside sheet */ }
-  overlayTapOut(){ clearInterval(this._timer); clearTimeout(this._t1); this.setState({phase:"idle",transcript:"",parsed:null}); }
+  overlayTapOut(){ this._stopRec(); this.setState({phase:"idle",transcript:"",parsed:null}); }
 
   confirmAdd(){
     const p=this.state.parsed; if(!p) return;
