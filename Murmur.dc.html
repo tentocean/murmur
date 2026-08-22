@@ -280,11 +280,17 @@
   <!-- voice dock -->
   <div style="position:absolute;left:0;right:0;bottom:0;z-index:7;background:linear-gradient(to top, var(--color-bg) 62%, transparent);display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:34px 0 calc(26px + env(safe-area-inset-bottom, 0px));gap:12px">
     <sc-if value="{{ showType }}" hint-placeholder-val="{{ false }}">
-      <div style="width:calc(100% - 44px);display:flex;gap:8px;align-items:center">
-        <input class="input" placeholder="พิมพ์งาน… เช่น จ่ายบิลพรุ่งนี้บ่าย 3 โมง" value="{{ typeText }}" onChange="{{ typeChange }}" onKeyDown="{{ typeKey }}" autoFocus="{{ true }}" style="flex:1"/>
-        <button class="btn btn-primary btn-icon" onClick="{{ typeSubmit }}" style="width:44px;height:44px">
-          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-        </button>
+      <div style="width:calc(100% - 44px);display:flex;flex-direction:column;gap:8px">
+        <input class="input" placeholder="พิมพ์งาน… เช่น จ่ายบิลพรุ่งนี้บ่าย 3 โมง" value="{{ typeText }}" onChange="{{ typeChange }}" onKeyDown="{{ typeKey }}" autoFocus="{{ true }}"/>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span style="flex:none;display:flex;align-items:center;gap:6px;color:var(--color-neutral-600);font-size:12px;padding-left:4px">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="4"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+          </span>
+          <input type="datetime-local" class="input" value="{{ typeWhen }}" onChange="{{ typeWhenChange }}" style="flex:1;min-width:0" title="เลือกวัน-เวลา (ไม่บังคับ)"/>
+          <button class="btn btn-primary btn-icon" onClick="{{ typeSubmit }}" style="width:44px;height:44px;flex:none">
+            <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </button>
+        </div>
       </div>
     </sc-if>
     <sc-if value="{{ showOrb }}" hint-placeholder-val="{{ true }}">
@@ -355,6 +361,7 @@ class Component extends DCLogic {
       editText: "",
       typing: false,
       typeText: "",
+      typeWhen: "",
       bannerId: 3,
       bannerDismissed: false,
       calOffset: 0,          // months away from the current month
@@ -622,9 +629,11 @@ class Component extends DCLogic {
   addTyped(){
     const raw=this.state.typeText.trim(); if(!raw) return;
     const p=this.parse(raw);
-    this.addTask(p);
-    this.setState({ typeText:"", typing:false });
-    this.speak(p.ts ? `Reminder set. ${p.title}.` : `Added. ${p.title}.`);
+    const w=this.state.typeWhen;
+    const ts = w ? new Date(w).getTime() : p.ts;   // picked date overrides parsed time
+    this.addTask({title:p.title, ts});
+    this.setState({ typeText:"", typeWhen:"", typing:false });
+    this.speak(ts ? `Reminder set. ${p.title}.` : `Added. ${p.title}.`);
   }
 
   toggle(id){
@@ -751,7 +760,9 @@ class Component extends DCLogic {
       toggleType: ()=>self.setState({typing:true}),
       typeText: s.typeText,
       typeChange: e=>self.setState({typeText:e.target.value}),
-      typeKey: e=>{ if(e.key==="Enter"){e.preventDefault(); self.addTyped();} if(e.key==="Escape") self.setState({typing:false,typeText:""}); },
+      typeWhen: s.typeWhen,
+      typeWhenChange: e=>self.setState({typeWhen:e.target.value}),
+      typeKey: e=>{ if(e.key==="Enter"){e.preventDefault(); self.addTyped();} if(e.key==="Escape") self.setState({typing:false,typeText:"",typeWhen:""}); },
       typeSubmit: ()=>self.addTyped(),
     };
   }
