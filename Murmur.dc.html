@@ -363,6 +363,7 @@ class Component extends DCLogic {
       typing: false,
       typeText: "",
       typeWhen: "",
+      typeWhenTouched: false,
       bannerId: 3,
       bannerDismissed: false,
       calOffset: 0,          // months away from the current month
@@ -678,13 +679,26 @@ class Component extends DCLogic {
     this.speak(p.ts ? `Reminder set. ${p.title}, ${this.fmt(p.ts).replace("·","at")}.` : `Added. ${p.title}.`);
   }
 
+  // ts(epoch ms) → "YYYY-MM-DDTHH:mm" in LOCAL time for a datetime-local <input>
+  _localInput(ts){
+    if(ts==null) return "";
+    const d=new Date(ts), z=n=>String(n).padStart(2,"0");
+    return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`;
+  }
+  // live-parse the typed text and reflect the read date/time into the picker (unless the user set it by hand)
+  typeChanged(v){
+    if(this.state.typeWhenTouched){ this.setState({typeText:v}); return; }
+    const p=this.parse(v.trim());
+    this.setState({ typeText:v, typeWhen:this._localInput(p.ts) });
+  }
+
   addTyped(){
     const raw=this.state.typeText.trim(); if(!raw) return;
     const p=this.parse(raw);
     const w=this.state.typeWhen;
     const ts = w ? new Date(w).getTime() : p.ts;   // picked date overrides parsed time
     this.addTask({title:p.title, ts});
-    this.setState({ typeText:"", typeWhen:"", typing:false });
+    this.setState({ typeText:"", typeWhen:"", typeWhenTouched:false, typing:false });
     this.speak(ts ? `Reminder set. ${p.title}.` : `Added. ${p.title}.`);
   }
 
@@ -811,10 +825,10 @@ class Component extends DCLogic {
       showType: s.typing,
       toggleType: ()=>self.setState({typing:true}),
       typeText: s.typeText,
-      typeChange: e=>self.setState({typeText:e.target.value}),
+      typeChange: e=>self.typeChanged(e.target.value),
       typeWhen: s.typeWhen,
-      typeWhenChange: e=>self.setState({typeWhen:e.target.value}),
-      typeKey: e=>{ if(e.key==="Enter"){e.preventDefault(); self.addTyped();} if(e.key==="Escape") self.setState({typing:false,typeText:"",typeWhen:""}); },
+      typeWhenChange: e=>self.setState({typeWhen:e.target.value, typeWhenTouched:true}),
+      typeKey: e=>{ if(e.key==="Enter"){e.preventDefault(); self.addTyped();} if(e.key==="Escape") self.setState({typing:false,typeText:"",typeWhen:"",typeWhenTouched:false}); },
       typeSubmit: ()=>self.addTyped(),
     };
   }
