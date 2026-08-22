@@ -124,6 +124,9 @@
           <button onClick="{{ t.edit }}" title="Edit" style="flex:none;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--color-neutral-600);cursor:pointer;display:grid;place-items:center">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
           </button>
+          <button onClick="{{ t.delete }}" title="ลบ" style="flex:none;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--color-neutral-500);cursor:pointer;display:grid;place-items:center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
         </div>
       </sc-for>
     </div>
@@ -184,6 +187,9 @@
           <button onClick="{{ t.edit }}" title="Edit" style="flex:none;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--color-neutral-600);cursor:pointer;display:grid;place-items:center">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
           </button>
+          <button onClick="{{ t.delete }}" title="ลบ" style="flex:none;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--color-neutral-500);cursor:pointer;display:grid;place-items:center">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
         </div>
       </sc-for>
     </div>
@@ -200,6 +206,9 @@
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="m5 13 4 4L19 7"/></svg>
           </button>
           <div style="flex:1;font-size:15px;font-weight:600;color:var(--color-neutral-500);text-decoration:line-through">{{ t.title }}</div>
+          <button onClick="{{ t.delete }}" title="ลบ" style="flex:none;width:32px;height:32px;border:0;border-radius:50%;background:transparent;color:var(--color-neutral-400);cursor:pointer;display:grid;place-items:center">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg>
+          </button>
         </div>
       </sc-for>
     </div>
@@ -629,6 +638,11 @@ class Component extends DCLogic {
     this.setState(s=>({editingId:null, tasks:v?s.tasks.map(t=>t.id===id?{...t,title:v}:t):s.tasks}));
     if(this.cloud && v) this.sb.from("murmur_tasks").update({title:v}).eq("id",id); }
 
+  deleteTask(id){
+    this.setState(s=>({tasks:s.tasks.filter(t=>t.id!==id)}));
+    if(this.cloud) this.sb.from("murmur_tasks").delete().eq("id",id);
+  }
+
   calShift(n){ this.setState(s=>({calOffset:(s.calOffset||0)+n})); }
   calReset(){ this.setState({calOffset:0}); }
 
@@ -643,6 +657,7 @@ class Component extends DCLogic {
       show: s.editingId!==t.id,
       toggle:()=>self.toggle(t.id),
       edit:()=>self.startEdit(t.id),
+      delete:()=>self.deleteTask(t.id),
     });
     const active=s.tasks.filter(t=>!t.done);
     const isToday=t=> t.ts==null || new Date(t.ts).setHours(0,0,0,0)<=day0.getTime();
