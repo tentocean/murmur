@@ -432,7 +432,7 @@ class Component extends DCLogic {
     const t=this.state.tasks.find(x=>x.id===id); if(!t) return;
     const ts=(t.ts||Date.now())+10*60e3;
     this.setState(s=>({ tasks:s.tasks.map(x=>x.id===id?{...x,ts}:x) }));
-    if(this.cloud) this.sb.from("murmur_tasks").update({ ts:new Date(ts).toISOString(), notified_at:null }).eq("id",id);
+    if(this.cloud) this.sb.from("murmur_tasks").update({ ts:new Date(ts).toISOString(), notified_at:null }).eq("id",id).then(()=>{}, ()=>{});
   }
 
   urlB64(base64){
@@ -658,16 +658,16 @@ class Component extends DCLogic {
     const t=this.state.tasks.find(x=>x.id===id); if(!t) return;
     const done=!t.done;
     this.setState(s=>({tasks:s.tasks.map(x=>x.id===id?{...x,done}:x)}));
-    if(this.cloud) this.sb.from("murmur_tasks").update({done}).eq("id",id);
+    if(this.cloud) this.sb.from("murmur_tasks").update({done}).eq("id",id).then(()=>{}, ()=>{});
   }
   startEdit(id){ const t=this.state.tasks.find(x=>x.id===id); this.setState({editingId:id, editText:t?t.title:""}); }
   saveEdit(){ const id=this.state.editingId; if(id==null) return; const v=this.state.editText.trim();
     this.setState(s=>({editingId:null, tasks:v?s.tasks.map(t=>t.id===id?{...t,title:v}:t):s.tasks}));
-    if(this.cloud && v) this.sb.from("murmur_tasks").update({title:v}).eq("id",id); }
+    if(this.cloud && v) this.sb.from("murmur_tasks").update({title:v}).eq("id",id).then(()=>{}, ()=>{}); }
 
   deleteTask(id){
     this.setState(s=>({tasks:s.tasks.filter(t=>t.id!==id)}));
-    if(this.cloud) this.sb.from("murmur_tasks").delete().eq("id",id);
+    if(this.cloud) this.sb.from("murmur_tasks").delete().eq("id",id).then(()=>{}, ()=>{});
   }
 
   calShift(n){ this.setState(s=>({calOffset:(s.calOffset||0)+n})); }
