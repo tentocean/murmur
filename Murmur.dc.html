@@ -163,8 +163,8 @@
       </div>
       <div style="display:grid;grid-template-columns:repeat(7,1fr)">
         <sc-for list="{{ calCells }}" as="c" hint-placeholder-count="35">
-          <div style="height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px">
-            <span style="width:26px;height:26px;display:grid;place-items:center;border-radius:50%;font-size:13px;font-weight:{{ c.weight }};background:{{ c.bg }};color:{{ c.color }}">{{ c.label }}</span>
+          <div onClick="{{ c.onSelect }}" style="height:36px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:{{ c.cursor }}">
+            <span style="width:26px;height:26px;display:grid;place-items:center;border-radius:50%;font-size:13px;font-weight:{{ c.weight }};background:{{ c.bg }};color:{{ c.color }};box-shadow:{{ c.ring }}">{{ c.label }}</span>
             <span style="width:5px;height:5px;border-radius:50%;background:{{ c.dotColor }}"></span>
           </div>
         </sc-for>
@@ -174,8 +174,19 @@
       </div>
     </div>
 
+    <sc-if value="{{ dayView }}" hint-placeholder-val="{{ false }}">
+      <div style="display:flex;align-items:center;gap:8px;margin:0 2px 10px">
+        <span style="font-family:var(--font-heading);font-size:15px">{{ selDayLabel }}</span>
+        <span style="font-size:12px;color:var(--color-neutral-500)">{{ selDayCount }}</span>
+        <span style="flex:1"></span>
+        <button onClick="{{ clearDay }}" style="border:0;background:var(--color-accent-100);color:var(--color-accent-800);font-family:var(--font-body);font-size:12px;font-weight:700;cursor:pointer;padding:5px 12px;border-radius:999px">ทั้งหมด</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{ dayEmpty }}" hint-placeholder-val="{{ false }}">
+      <div style="text-align:center;color:var(--color-neutral-500);font-size:14px;padding:16px 0 22px">ไม่มีรายการในวันนี้</div>
+    </sc-if>
     <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px">
-      <sc-for list="{{ upcoming }}" as="t" hint-placeholder-count="2">
+      <sc-for list="{{ listItems }}" as="t" hint-placeholder-count="2">
         <div style="display:flex;align-items:center;gap:13px;background:transparent;border:1.5px dashed var(--color-neutral-300);border-radius:20px;padding:13px 15px">
           <button onClick="{{ t.toggle }}" style="flex:none;width:26px;height:26px;border-radius:50%;border:2.5px solid var(--color-neutral-400);background:transparent;cursor:pointer;display:grid;place-items:center;padding:0"></button>
           <div style="flex:1;min-width:0">
@@ -367,6 +378,7 @@ class Component extends DCLogic {
       bannerId: 3,
       bannerDismissed: false,
       calOffset: 0,          // months away from the current month
+      selectedDay: null,     // midnight-ms of the calendar day the user tapped (null = show all upcoming)
     };
     this.samples = [
       "Call the pharmacy tomorrow at 5pm",
@@ -738,8 +750,9 @@ class Component extends DCLogic {
     if(this.cloud) this.sb.from("murmur_tasks").delete().eq("id",id).then(()=>{}, ()=>{});
   }
 
-  calShift(n){ this.setState(s=>({calOffset:(s.calOffset||0)+n})); }
-  calReset(){ this.setState({calOffset:0}); }
+  calShift(n){ this.setState(s=>({calOffset:(s.calOffset||0)+n, selectedDay:null})); }
+  calReset(){ this.setState({calOffset:0, selectedDay:null}); }
+  selectDay(mid){ this.setState(s=>({selectedDay: s.selectedDay===mid ? null : mid})); }  // tap again to unselect
 
   renderVals(){
     const s=this.state, self=this;
@@ -779,20 +792,37 @@ class Component extends DCLogic {
       const d=new Date(t.ts);
       if(d.getFullYear()===yr && d.getMonth()===mo) taskDays[d.getDate()]=(taskDays[d.getDate()]||0)+1;
     });
+    const sel=s.selectedDay;
     const calCells=[];
-    for(let i=0;i<startDow;i++) calCells.push({key:"b"+i, label:"", bg:"transparent", color:"transparent", dotColor:"transparent", weight:500});
+    for(let i=0;i<startDow;i++) calCells.push({key:"b"+i, label:"", bg:"transparent", color:"transparent", dotColor:"transparent", weight:500, cursor:"default", ring:"none", onSelect:()=>{}});
     for(let d=1; d<=daysInMonth; d++){
       const cellMid=new Date(yr,mo,d).getTime();
       const isToday=cellMid===todayMid.getTime(), past=cellMid<todayMid.getTime(), has=!!taskDays[d];
+      const selected=sel===cellMid;
       calCells.push({
         key:"d"+d, label:String(d),
-        bg: isToday ? "var(--color-accent)" : "transparent",
-        color: isToday ? "#fff" : (past ? "var(--color-neutral-400)" : "var(--color-text)"),
+        bg: isToday ? "var(--color-accent)" : (selected ? "var(--color-accent-100)" : "transparent"),
+        color: isToday ? "#fff" : (selected ? "var(--color-accent-900)" : (past ? "var(--color-neutral-400)" : "var(--color-text)")),
         dotColor: has ? (isToday ? "#fff" : (past ? "var(--color-neutral-400)" : "var(--color-accent-2-600)")) : "transparent",
-        weight: isToday||has ? 700 : (past ? 400 : 600),
+        weight: isToday||has||selected ? 700 : (past ? 400 : 600),
+        cursor:"pointer",
+        ring: selected ? "0 0 0 2px var(--color-accent-700)" : "none",
+        onSelect:()=>self.selectDay(cellMid),
       });
     }
     const calMonth=calBase.toLocaleDateString([], {month:"long", year:"numeric"});
+
+    // ── รายการที่จะแสดงใต้ปฏิทิน: ถ้าเลือกวัน → เฉพาะงานของวันนั้น, ไม่เลือก → upcoming ตามเดิม ──
+    const dayView = sel!=null;
+    let listItems=upcoming, selDayLabel="", selDayCount=0, dayEmpty=false;
+    if(dayView){
+      const dayTasks=active.filter(t=>t.ts!=null && new Date(t.ts).setHours(0,0,0,0)===sel)
+                            .sort((a,b)=>a.ts-b.ts).map(view);
+      listItems=dayTasks;
+      selDayCount=dayTasks.length;
+      dayEmpty=dayTasks.length===0;
+      selDayLabel=new Date(sel).toLocaleDateString([], {weekday:"long", day:"numeric", month:"long"});
+    }
 
     const canNotify = typeof Notification !== "undefined";
     return {
@@ -821,7 +851,8 @@ class Component extends DCLogic {
       progressTitle: done.length===totalToday && totalToday>0 ? "All done today" : `${done.length} of ${totalToday} done`,
       progressSub: today.length? `${today.length} left · keep the streak going` : "Nothing left — nice work",
 
-      today, upcoming, done,
+      today, upcoming, done, listItems, dayView, dayEmpty, selDayLabel, selDayCount,
+      clearDay: ()=>self.setState({selectedDay:null}),
       todayCount: today.length, upcomingCount: upcoming.length, doneCount: done.length,
 
       editText: s.editText,
