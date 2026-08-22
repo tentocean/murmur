@@ -4,5 +4,6 @@
 .DS_Store
 MURMUR_SETUP.md
 MURMUR_GUIDE.md
+HANDOFF.md
 wrangler.toml
 supabase
