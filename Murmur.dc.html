@@ -190,11 +190,16 @@
         <div style="display:flex;align-items:center;gap:13px;background:transparent;border:1.5px dashed var(--color-neutral-300);border-radius:20px;padding:13px 15px">
           <button onClick="{{ t.toggle }}" style="flex:none;width:26px;height:26px;border-radius:50%;border:2.5px solid var(--color-neutral-400);background:transparent;cursor:pointer;display:grid;place-items:center;padding:0"></button>
           <div style="flex:1;min-width:0">
-            <div style="font-size:15.5px;font-weight:600;line-height:1.25">{{ t.title }}</div>
-            <span class="tag {{ t.tagClass }}" style="margin-top:6px;gap:5px">
-              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="4"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
-              {{ t.whenLabel }}
-            </span>
+            <sc-if value="{{ t.editing }}" hint-placeholder-val="{{ false }}">
+              <input class="input" value="{{ editText }}" onChange="{{ editChange }}" onKeyDown="{{ editKey }}" onBlur="{{ editSave }}" autoFocus="{{ true }}" style="height:34px;min-height:34px"/>
+            </sc-if>
+            <sc-if value="{{ t.show }}" hint-placeholder-val="{{ true }}">
+              <div style="font-size:15.5px;font-weight:600;line-height:1.25">{{ t.title }}</div>
+              <span class="tag {{ t.tagClass }}" style="margin-top:6px;gap:5px">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="4"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
+                {{ t.whenLabel }}
+              </span>
+            </sc-if>
           </div>
           <button onClick="{{ t.edit }}" title="Edit" style="flex:none;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:var(--color-neutral-600);cursor:pointer;display:grid;place-items:center">
             <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.75" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
