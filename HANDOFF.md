@@ -5,18 +5,23 @@
 
 - **Live:** https://murmur.tent25670.workers.dev  (แอปจริงอยู่ที่ `/Murmur.dc`)
 - **Repo:** https://github.com/tentocean/murmur
-- **โฟลเดอร์:** `~/Desktop/murmur-app`
+- **โฟลเดอร์:** `~/Desktop/Web App/murmur-app`  (มีช่องว่างในพาธ — ใส่ quote เวลา `cd`)
 
 ---
 
 ## 1. ภาพรวม / ฟีเจอร์
 
 - เพิ่มงานด้วย **เสียง** (Web Speech API, ภาษาไทย) หรือ **พิมพ์**
-- **อ่านวัน-เวลาจากประโยค** ทั้งไทย/อังกฤษ ("พรุ่งนี้บ่าย 3 โมง", "in 2 hours")
-- **ช่องเลือกวัน-เวลา** (datetime picker) ตอนพิมพ์ — ถ้าเลือกจะ override การอ่านจากข้อความ
+- **อ่านวัน-เวลาจากประโยค** ทั้งไทย/อังกฤษ — ครอบคลุม:
+  - วันสัมพัทธ์: วันนี้/พรุ่งนี้/มะรืน, ชื่อวัน(+หน้า), today/tomorrow/next Mon
+  - ไกลกว่าสัปดาห์: "อีก N วัน/สัปดาห์/เดือน", "สัปดาห์หน้า", "เดือนหน้า", "in N days/weeks/months"
+  - วันที่เจาะจง: "วันที่ 5", "5 กันยา", "กันยายน 5" — ชื่อเดือนรับทั้งเต็ม/สั้น(กันยา,สิงหา)/ย่อมีจุด(ก.ย.); ถ้าเลยแล้วเลื่อนเดือน/ปีอัตโนมัติ
+  - เวลาไทยทั้งแบบตัวเลขและ**พูดเป็นคำ**: ตี 5 / ตีห้า, บ่าย 3 / บ่ายสาม, 1 ทุ่ม / หนึ่งทุ่ม, สิบเอ็ดโมง, เที่ยง, ครึ่ง, "อีก N ชั่วโมง/นาที"
+  - (logic ทั้งหมดอยู่ใน `parse()` — ทดสอบด้วยสคริปต์ Node กว่า 40 เคสก่อน deploy ทุกครั้ง)
+- **ช่องเลือกวัน-เวลา** (datetime picker) ตอนพิมพ์ — พิมพ์ข้อความที่มีวันที่แล้ว picker จะ **auto-เติมวัน-เวลาที่อ่านได้ให้เห็นทันที**; ถ้าผู้ใช้แก้เองจะไม่เขียนทับ (state `typeWhenTouched`)
 - จัดกลุ่ม **Today / Upcoming / Done** + วงแหวนความคืบหน้า
-- **ปฏิทินรายเดือน** ใน Upcoming — จุดบอกวันมีงาน + เลื่อนเดือน (‹ › + Today)
-- **เพิ่ม / เช็คเสร็จ / แก้ไข / ลบ** งาน
+- **ปฏิทินรายเดือน** ใน Upcoming — จุดบอกวันมีงาน, เลื่อนเดือน (‹ › + Today), และ **แตะเลือกวันเพื่อกรองรายการเฉพาะวันนั้น** (แตะซ้ำ/ปุ่ม "ทั้งหมด" เพื่อยกเลิก; เปลี่ยนเดือนล้าง selection)
+- **เพิ่ม / เช็คเสร็จ / แก้ไข / ลบ** งาน — แก้ไขได้ทั้งใน Today และ Upcoming (inline input, บันทึกเมื่อ blur หรือ Enter, ยกเลิกด้วย Esc)
 - **Login ด้วย Google** (Supabase Auth) + เก็บงานบน cloud (sync ข้ามอุปกรณ์)
 - **Web Push เตือนตามเวลา** แม้ปิดแอป (Service Worker + Edge Function + cron)
 - **PWA เต็มจอบน iOS** (Add to Home Screen)
@@ -101,7 +106,7 @@ pg_cron (ทุก 1 นาที) → net.http_post → Edge Function "send-rem
 ## 6. รันในเครื่อง (dev)
 
 ```bash
-cd ~/Desktop/murmur-app
+cd ~/Desktop/"Web App"/murmur-app
 python3 -m http.server 8125
 # เปิด http://localhost:8125/Murmur.dc.html
 ```
@@ -114,7 +119,7 @@ python3 -m http.server 8125
 
 **ทางเร็ว (แนะนำ):**
 ```bash
-cd ~/Desktop/murmur-app && npx --yes wrangler deploy
+cd ~/Desktop/"Web App"/murmur-app && npx --yes wrangler deploy
 ```
 **ทาง git:** `git push origin main` → Cloudflare auto-deploy (ช้ากว่า/บางครั้งไม่ trigger)
 
@@ -122,7 +127,7 @@ deploy ทั้งสองทางได้ผลเหมือนกัน 
 
 **แก้ Edge Function แล้ว deploy ใหม่:**
 ```bash
-cd ~/Desktop/murmur-app
+cd ~/Desktop/"Web App"/murmur-app
 npx --yes supabase@latest link --project-ref qiuktriwvzwvyvykvaxe
 npx --yes supabase@latest functions deploy send-reminders --no-verify-jwt
 ```
@@ -148,6 +153,12 @@ npx --yes supabase@latest functions deploy send-reminders --no-verify-jwt
 6. **`sw.js` ไม่มี fetch handler** — ตั้งใจ เพื่อไม่ให้แคช/กระทบอะไร (scope `/`)
 
 7. Web Speech ตั้ง `lang="th-TH"` — พูดไทยแม่นสุด, พูดอังกฤษล้วนอาจเพี้ยน; ต้องต่อเน็ต + สิทธิ์ไมค์ + HTTPS/localhost
+
+8. **เลขไทยที่พูดเป็นคำ** (ตีห้า, บ่ายสาม) — `parse()` แปลงเป็นตัวเลขเฉพาะเมื่อ**ติดกับคำบอกเวลา** (ตี/บ่าย/ทุ่ม/โมง/นาฬิกา/นาที) เท่านั้น เพื่อไม่ให้ชื่องานพัง เช่น "ตีกอล์ฟ"/"ซื้อของสามอย่าง" จะไม่ถูกตีความเป็นเวลา — ระวังถ้าจะขยาย regex อย่าให้จับเลขลอย ๆ
+
+9. **input แก้ไขงานต้องมีในทุก list** — แต่ละ `<sc-for>` ที่แสดงงาน (Today, Upcoming/วันที่เลือก) ต้องมีบล็อก `<sc-if value="{{ t.editing }}">…<input …>` + `<sc-if value="{{ t.show }}">` ของตัวเอง มิฉะนั้นกดปุ่มดินสอแล้วจะไม่มีช่องขึ้น (เคยเป็นบั๊กในลิสต์ Upcoming — แก้แล้ว) · state ที่เกี่ยวข้อง: `editingId`, `editText`; บันทึกที่ `saveEdit()` (มี `.then()` ตาม gotcha #1)
+
+10. **โฟลเดอร์ย้ายเข้า `~/Desktop/Web App/`** (มีช่องว่าง) — เวลา `cd`/สคริปต์ ต้องใส่ quote รอบพาธ; git remote/Cloudflare/Supabase ไม่กระทบ (ผูกกับ repo/โปรเจกต์ ไม่ใช่พาธเครื่อง)
 
 ---
 
